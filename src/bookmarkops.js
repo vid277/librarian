@@ -197,10 +197,20 @@ const dumpTreeNodes = (nodes) => {
 }
 
 function process_flavor_html(html) {
-	const b_first = html.indexOf("<b>");
+	/*const b_first = html.indexOf("<b>");
 	const b_last = html.lastIndexOf("</b>");
 	if (b_first < 0 || b_last < 0) return "<flavor text error>";
-	
+	const start = Math.max(0, b_first - 30);
+	const end = Math.min(html.length, b_last + 4 + 30);
+	return html.substring(start, end);*/
+	const bits = html.split(/<\s*\/?\s*b(?:\s+[^>]*)?>/);
+	const output = [];
+	while (bits.length > 1) {
+		bits.shift();
+		const text = bits.shift();
+		if (text) output.push(text);
+	}
+	return output.join("; ");
 }
 
 const searchBookmarks = async (dbInstance, query) => {
@@ -231,7 +241,7 @@ const searchBookmarks = async (dbInstance, query) => {
 			page: 0,
 			query: query,
 			score_threshold: score_threshold,
-			search_type: "hybrid",
+			search_type: "semantic",
 		}),
 	});
 	
