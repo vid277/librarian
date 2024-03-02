@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { create, count, insertMultiple, searchVector, getByID, save, load } from '@orama/orama';
 import { PipelineSingleton, embed } from './modeling.js';
+import { auth_headers } from "./auth.js";
 
 class LocalDBSingleton {
 	static dbNamePrefix = 'librarian-vector-db-'
@@ -69,11 +70,21 @@ const subselectText = (dom, n_paras=3) => {
 	return selectedText;
 };
 
+async function is_there_chunk_for_url(url) {
+	const response = await fetch("https://api.trieve.ai/api/chunk/tracking_id/" + encodeURIComponent(url.toString()), {
+		headers: {
+			...(await auth_headers()),
+		}
+	});
+	return response.ok;
+}
+
 // TODO: too slow right now, make this go brrr
 const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 	return new Promise(resolve => {
 		const url = bookmark.url;
-		getByID(dbInstance, url).then((result) => {
+		//getByID(dbInstance, url).then((result) => {
+		is_there_chunk_for_url(url).then((result) => {
 			// URL's already been indexed, do nothing
 			if (result) {
 				resolve({});
@@ -85,17 +96,43 @@ const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 				return subselectText(dom);
 			}).catch(error => bookmark.title);
 
-			text.then((res) => {
+			text.then(async (res) => {
 				res = res ? res : bookmark.title;
-				embed(pipelineInstance, res).then(vector => {
+				/*embed(pipelineInstance, res).then(vector => {
 					resolve({
 						id: url,
 						title: bookmark.title,
 						url: url,
 						embedding: vector
 					});
-				}).catch(error => resolve({}));
-			}).catch(error => resolve({}));
+				}).catch(error => resolve({}));*/
+
+				try {
+					const response = await fetch("https://api.trieve.ai/api/chunk", {
+						method: "POST",
+						headers: {
+							"Content-Type": "application/json",
+							...(await auth_headers()),
+						},
+						body: JSON.stringify({
+							chunk_html: res,
+							link: url.toString(),
+							tracking_id: url.toString(),
+						}),
+					});
+					if (!response.ok) {
+						console.warn(response);
+						const msg = "POST chunk returned " + response.status;
+						console.error(msg);
+						try { console.error(await response.text()); } catch (ignored) {}
+						throw new Error(msg);
+					}
+				} catch (e) {
+					console.error(e);
+					console.error("POST chunk died");
+					throw e;
+				}
+			}).finally(error => resolve({}));
 		}).catch(error => {
 			resolve({});
 		});
@@ -159,10 +196,20 @@ const dumpTreeNodes = (nodes) => {
 	return sublist;
 }
 
+function process_flavor_html(html) {
+	const b_first = html.indexOf("<b>");
+	const b_last = html.lastIndexOf("</b>");
+	if (b_first < 0 || b_last < 0) return "<flavor text error>";
+	
+}
+
 const searchBookmarks = async (dbInstance, query) => {
 	if (!dbInstance) return [];
 
-	const pipelineInstance = await PipelineSingleton.getInstance();
+	const raw_bookmarks = await new Promise(resolve => chrome.bookmarks.getTree(resolve));
+	const bookmarksList = dumpTreeNodes(raw_bookmarks[0].children);
+
+	/*const pipelineInstance = await PipelineSingleton.getInstance();
 	const queryEmbed = await embed(pipelineInstance, query);
 	const result = await searchVector(dbInstance, {
 		vector: queryEmbed,
@@ -171,9 +218,55 @@ const searchBookmarks = async (dbInstance, query) => {
 		includeVectors: false,
 		limit: 20,
 		offset: 0,
-	})
+	})*/
+	const score_threshold = 0.05;
+	const response = await fetch("https://api.trieve.ai/api/chunk/search", {
+		method: "POST",
+		headers: {
+			"Content-Type": "application/json",
+			...(await auth_headers()),
+		},
+		body: JSON.stringify({
+			page_size: 100,
+			page: 0,
+			query: query,
+			score_threshold: score_threshold,
+			search_type: "hybrid",
+		}),
+	});
+	
+	if (!response.ok) {
+		console.warn(response);
+		const msg = "Search query returned non success: " + response.status;
+		console.error(msg);
+		try { console.error(await response.text()); } catch (ignored) {}
+		throw new Error(msg);
+	}
+	const payload = await response.json();
 
-	return result.hits;
+	try {
+		payload.score_chunks.sort((a, b) => b.score - a.score);
+		console.log(payload);
+		const results = payload.score_chunks
+			.filter(chunk => chunk.score >= score_threshold)
+			.map(chunk => 
+				chunk.metadata.map(metadata => { return {
+					document: {
+						url: metadata.link,
+						title: bookmarksList.find(bookmark => bookmark.url === metadata.link)?.title ?? metadata.link,
+						flavor_html: process_flavor_html(metadata.chunk_html),
+					}
+				} })
+			)
+			.flat();
+		return results;
+	} catch (e) {
+		console.error(e);
+		throw e;
+	}
+			
+	return [];
+	//return result.hits;
 };
 
 export { getDBCount, indexBookmarks, searchBookmarks, LocalDBSingleton };

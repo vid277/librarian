@@ -12,11 +12,15 @@ const makeBookmarkItem = (bookDoc) => {
 	a.appendChild(document.createTextNode(bookDoc.title));
 	const d = document.createElement('div');
 	d.appendChild(a);
+	const flavor = document.createElement("div");
+	flavor.innerHTML = bookDoc.flavor_html;
+	d.appendChild(flavor);
 	return d;
 };
 
 const buildResultsDiv = (results) => {
 	results.forEach((element) => {
+		console.log(element);
 		outputElement.appendChild(makeBookmarkItem(element.document));
 	});
 };
