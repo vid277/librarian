@@ -59,18 +59,6 @@ const getDBCount = async (dbInstance) => {
 	return await count(dbInstance);
 };
 
-// Subselect text from page to embed
-// TODO: make this smarter, parse out HTML
-/*const subselectText = (dom, n_paras=3) => {
-	const strippedText = dom('div').text().trim().replace(/\n\s*\n/g, '\n');
-	// Filter paragraphs smaller than 50 characters; filter duplicate paras
-	let salientParagraphs = new Set(strippedText.split('\n').filter(text => text.length >= 50));
-	// Get n_paras biggest paragraphs
-	salientParagraphs = Array.from(salientParagraphs).toSorted((a, b) => b.length - a.length);
-	const selectedText = salientParagraphs.slice(0, n_paras).join('\n');
-	return selectedText;
-};*/
-
 function tracking_id(url_string, index) { return url_string + "\n" + index; };
 
 async function is_there_chunk_for_url(url) {
@@ -82,7 +70,6 @@ async function is_there_chunk_for_url(url) {
 	return response.ok;
 }
 
-// TODO: too slow right now, make this go brrr
 const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 	return new Promise(resolve => {
 		const url = bookmark.url;
@@ -137,7 +124,6 @@ const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 					} catch (e) {
 						console.error(e);
 						console.error("POST chunk died");
-						//throw e;
 					}
 				}
 			}).finally(error => resolve({}));
@@ -205,12 +191,6 @@ const dumpTreeNodes = (nodes) => {
 }
 
 function process_flavor_html(html) {
-	/*const b_first = html.indexOf("<b>");
-	const b_last = html.lastIndexOf("</b>");
-	if (b_first < 0 || b_last < 0) return "<flavor text error>";
-	const start = Math.max(0, b_first - 30);
-	const end = Math.min(html.length, b_last + 4 + 30);
-	return html.substring(start, end);*/
 	const bits = html.split(/<\s*\/?\s*b(?:\s+[^>]*)?>/);
 	const output = [];
 	while (bits.length > 1) {
@@ -227,16 +207,6 @@ const searchBookmarks = async (dbInstance, query) => {
 	const raw_bookmarks = await new Promise(resolve => chrome.bookmarks.getTree(resolve));
 	const bookmarksList = dumpTreeNodes(raw_bookmarks[0].children);
 
-	/*const pipelineInstance = await PipelineSingleton.getInstance();
-	const queryEmbed = await embed(pipelineInstance, query);
-	const result = await searchVector(dbInstance, {
-		vector: queryEmbed,
-		property: 'embedding',
-		similarity: 0.3,
-		includeVectors: false,
-		limit: 20,
-		offset: 0,
-	})*/
 	const score_threshold = 0.1;
 	const response = await fetch("https://api.trieve.ai/api/chunk/search", {
 		method: "POST",
@@ -254,7 +224,7 @@ const searchBookmarks = async (dbInstance, query) => {
 	});
 	
 	if (!response.ok) {
-		console.warn(response);
+		//console.warn(response);
 		const msg = "Search query returned non success: " + response.status;
 		console.error(msg);
 		try { console.error(await response.text()); } catch (ignored) {}
