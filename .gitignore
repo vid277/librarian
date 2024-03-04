@@ -1,4 +1,4 @@
 node_modules/
 misc/*
 *.DS_Store
-./src/auth.js
+src/auth.js
