@@ -2,6 +2,7 @@ import * as cheerio from 'cheerio';
 import { create, count, insertMultiple, searchVector, getByID, save, load } from '@orama/orama';
 import { PipelineSingleton, embed } from './modeling.js';
 import { auth_headers } from "./auth.js";
+import { subselect_text } from "./subselect_text.js";
 
 class LocalDBSingleton {
 	static dbNamePrefix = 'librarian-vector-db-'
@@ -60,7 +61,7 @@ const getDBCount = async (dbInstance) => {
 
 // Subselect text from page to embed
 // TODO: make this smarter, parse out HTML
-const subselectText = (dom, n_paras=3) => {
+/*const subselectText = (dom, n_paras=3) => {
 	const strippedText = dom('div').text().trim().replace(/\n\s*\n/g, '\n');
 	// Filter paragraphs smaller than 50 characters; filter duplicate paras
 	let salientParagraphs = new Set(strippedText.split('\n').filter(text => text.length >= 50));
@@ -68,7 +69,7 @@ const subselectText = (dom, n_paras=3) => {
 	salientParagraphs = Array.from(salientParagraphs).toSorted((a, b) => b.length - a.length);
 	const selectedText = salientParagraphs.slice(0, n_paras).join('\n');
 	return selectedText;
-};
+};*/
 
 async function is_there_chunk_for_url(url) {
 	const response = await fetch("https://api.trieve.ai/api/chunk/tracking_id/" + encodeURIComponent(url.toString()), {
@@ -93,7 +94,7 @@ const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 
 			const text = fetch(url).then(res => res.text()).then(res => {
 				const dom = cheerio.load(res);
-				return subselectText(dom);
+				return subselect_text(dom);
 			}).catch(error => bookmark.title);
 
 			text.then(async (res) => {

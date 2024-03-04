@@ -17,3 +17,12 @@ export async function auth_headers() {
 		Authorization: await authorization(),
 	};
 }
+
+
+export async function chunk_token_limit() {
+	return 8192;
+}
+export async function chunk_word_limit() {
+	//https://blog.devgenius.io/understanding-tokens-and-tokenization-in-large-language-models-1058cd24b944#b3b9
+	return (await chunk_token_limit()) * 3 / 4;
+}
