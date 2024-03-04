@@ -2,6 +2,7 @@ import { getDBCount, indexBookmarks, searchBookmarks, LocalDBSingleton } from '.
 
 ////////////////////// Init //////////////////////
 chrome.runtime.onInstalled.addListener(async function () {
+	await new Promise(resolve => chrome.storage.sync.clear(resolve));
 	const dbInstance = await LocalDBSingleton.getInstance();
 	indexBookmarks(dbInstance);
 

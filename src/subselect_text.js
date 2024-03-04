@@ -1,11 +1,22 @@
 import { chunk_word_limit } from "./auth.js";
 
-export async function subselect_text(dom_node) {
+export async function subselect_text_into_chunks(dom_node) {
 	const my_chunk_word_limit = await chunk_word_limit();
 	const chunker = new PageChunker(my_chunk_word_limit);
 	chunker.enqueue_node(dom_node);
 	return new Promise((resolve, reject) => {
-		
+		function work() {
+			try {
+				if (chunker.process()) setTimeout(work);
+				else {
+					chunker.finalize();
+					resolve(chunker.chunks);
+				}
+			} catch (e) {
+				reject(e);
+			}
+		}
+		work();
 	});
 }
 
@@ -16,8 +27,8 @@ export class PageChunker {
 		this.current_chunk = "";
 		this.chunk_word_limit = chunk_word_limit;
 
-		this.blacklisted_tags = ["SCRIPT", "STYLE", "LINK"];
-		this.content_tags = ["P", "SPAN", "H1", "H2", "H3", "H4", "H5", "H6", "H7", "STRONG", "EM", "B", "I", "TITLE", "UL", "OL"];
+		this.blacklisted_tags = ["script", "style", "link"];
+		this.content_tags = ["p", "span", "h1", "h2", "h3", "h4", "h5", "h6", "h7", "strong", "em", "b", "i", "title", "ul", "ol", "a"];
 	}
 
 	enqueue_node(dom_node, opts = {}) {
@@ -33,20 +44,20 @@ export class PageChunker {
 		});
 	}
 
-	//Returns if more processing is needed
+	//Returns whether more processing is needed
 	process() {
 		if (this.stack.length === 0) return false;
 		const entry = this.stack.pop();
 		const dom_node = entry.dom_node;
 
 		const should_handle_content = entry.should_handle_content || entry.delegated_should_handle_content;
-		if (should_handle_content && !entry.has_processed_content && dom_node.nodeValue === "string" && dom_node.nodeValue.length > 0) {
+		if (should_handle_content && !entry.has_processed_content && typeof dom_node.nodeValue === "string" && dom_node.nodeValue.length > 0) {
 			this.current_chunk += dom_node.nodeValue + "\n";
 			entry.has_processed_content = true;
 		}
 		
 		if (!entry.has_processed_children && Array.isArray(dom_node.childNodes)) {
-			for (let i = dom_node.childNodes.length - 1; i >= 0; i++) {
+			for (let i = dom_node.childNodes.length - 1; i >= 0; i--) {
 				this.enqueue_node(dom_node.childNodes[i], { delegated_should_handle_content: should_handle_content });
 			}
 			entry.has_processed_children = true;

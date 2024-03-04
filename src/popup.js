@@ -13,7 +13,9 @@ const makeBookmarkItem = (bookDoc) => {
 	const d = document.createElement('div');
 	d.appendChild(a);
 	const flavor = document.createElement("div");
-	flavor.innerHTML = bookDoc.flavor_html;
+	let flavor_html = bookDoc.flavor_html;
+	if (flavor_html.length > 100) flavor_html = flavor_html.slice(0, 300);
+	flavor.innerHTML = flavor_html;
 	d.appendChild(flavor);
 	return d;
 };

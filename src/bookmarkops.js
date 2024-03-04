@@ -2,7 +2,7 @@ import * as cheerio from 'cheerio';
 import { create, count, insertMultiple, searchVector, getByID, save, load } from '@orama/orama';
 import { PipelineSingleton, embed } from './modeling.js';
 import { auth_headers } from "./auth.js";
-import { subselect_text } from "./subselect_text.js";
+import { subselect_text_into_chunks } from "./subselect_text.js";
 
 class LocalDBSingleton {
 	static dbNamePrefix = 'librarian-vector-db-'
@@ -71,8 +71,10 @@ const getDBCount = async (dbInstance) => {
 	return selectedText;
 };*/
 
+function tracking_id(url_string, index) { return url_string + "\n" + index; };
+
 async function is_there_chunk_for_url(url) {
-	const response = await fetch("https://api.trieve.ai/api/chunk/tracking_id/" + encodeURIComponent(url.toString()), {
+	const response = await fetch("https://api.trieve.ai/api/chunk/tracking_id/" + encodeURIComponent(tracking_id(url.toString())), {
 		headers: {
 			...(await auth_headers()),
 		}
@@ -94,44 +96,49 @@ const scrapeAndVectorize = async (dbInstance, pipelineInstance, bookmark) => {
 
 			const text = fetch(url).then(res => res.text()).then(res => {
 				const dom = cheerio.load(res);
-				return subselect_text(dom);
-			}).catch(error => bookmark.title);
+				const root = dom.root()[0];
+				return subselect_text_into_chunks(root);
+			}).catch(error => {
+				console.error(error);
+				return [bookmark.title]
+			});
 
-			text.then(async (res) => {
-				res = res ? res : bookmark.title;
-				/*embed(pipelineInstance, res).then(vector => {
-					resolve({
-						id: url,
-						title: bookmark.title,
-						url: url,
-						embedding: vector
-					});
-				}).catch(error => resolve({}));*/
+			text.then(async (chunks) => {
+				chunks = Array.isArray(chunks) ? chunks : [bookmark.title];
+				console.log(chunks);
 
-				try {
-					const response = await fetch("https://api.trieve.ai/api/chunk", {
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							...(await auth_headers()),
-						},
-						body: JSON.stringify({
-							chunk_html: res,
-							link: url.toString(),
-							tracking_id: url.toString(),
-						}),
-					});
-					if (!response.ok) {
-						console.warn(response);
-						const msg = "POST chunk returned " + response.status;
-						console.error(msg);
-						try { console.error(await response.text()); } catch (ignored) {}
-						throw new Error(msg);
+				for (let i = 0; i < chunks.length; i++) {
+					try {
+						const chunk = chunks[i];
+						//const chunk_html = cheerio.load("<p></p>");
+						const chunk_html = chunk;
+						const link = url.toString();
+						const my_tracking_id = tracking_id(link, i);
+
+						const response = await fetch("https://api.trieve.ai/api/chunk", {
+							method: "POST",
+							headers: {
+								"Content-Type": "application/json",
+								...(await auth_headers()),
+							},
+							body: JSON.stringify({
+								chunk_html: chunk_html,
+								link: link,
+								tracking_id: my_tracking_id,
+							}),
+						});
+						if (!response.ok) {
+							console.warn(response);
+							const msg = "POST chunk returned " + response.status;
+							console.error(msg);
+							try { console.error(await response.text()); } catch (ignored) {}
+							throw new Error(msg);
+						}
+					} catch (e) {
+						console.error(e);
+						console.error("POST chunk died");
+						//throw e;
 					}
-				} catch (e) {
-					console.error(e);
-					console.error("POST chunk died");
-					throw e;
 				}
 			}).finally(error => resolve({}));
 		}).catch(error => {
@@ -230,7 +237,7 @@ const searchBookmarks = async (dbInstance, query) => {
 		limit: 20,
 		offset: 0,
 	})*/
-	const score_threshold = 0.05;
+	const score_threshold = 0.1;
 	const response = await fetch("https://api.trieve.ai/api/chunk/search", {
 		method: "POST",
 		headers: {
@@ -242,7 +249,7 @@ const searchBookmarks = async (dbInstance, query) => {
 			page: 0,
 			query: query,
 			score_threshold: score_threshold,
-			search_type: "semantic",
+			search_type: "hybrid",
 		}),
 	});
 	
