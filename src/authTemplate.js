@@ -1,3 +1,5 @@
+// create a copy of this file, fill-in required data, and rename it to auth.js
+
 export async function tr_organization() {
 	return " "; // replace with organization id
 }
