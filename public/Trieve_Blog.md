@@ -1,10 +1,10 @@
 # Searching bookmarks made easy. 
 
-Everyone has a couple websites that they visit nearly every single day. From the obvious ones such as email, instagram, or youtube, your most common websites may be anything from CNN daily news to a very specific blog post. 
+Everyone’s got those websites they visit practically every day, from the obvious — Instagram, Youtube, or their emails — to the obscure — weird blog posts and wacky forums — the internet hosts something for everyone. 
 
-Imagine these being just a click away. Companies thought ahead, introducing the bookmarks along with a bookmarks bar. In your web browser, the bookmark bar sits atop your browser window, containing links to your favorite websites. 
+Companies thought of a future where these pages could be right at your fingertips, introducing a bookmark bar for your “bookmarked,” or saved, pages. In most web browsers, the bookmark bar sits atop your browser window, containing links to all your favorite websites.
 
-However, this can quickly become overwhelming to navigate as your bookmarks bar becomes clouded with folders inside other folders. While existing methods allow for searching by bookmark name, they fall short when it comes to searching for content within individual bookmarks.
+All of those bookmarks can be overwhelming, however. While existing methods allow searches by a bookmark’s name, they fall short when it comes to searching for content within those bookmarks.
 
 This gap in functionality inspired the creation of the Trieve librarian.
 
@@ -15,10 +15,10 @@ This gap in functionality inspired the creation of the Trieve librarian.
 
 
 ## How does the Trieve librarian work?
-The Trieve librarian is a chrome extension that can scrape websites,  subselect relevant content and text, and search and index new bookmarks regularly. It then uses the production-ready data infrastructure to store the bookmark names, page content, and other relevant data. From the UI, the user can query information using the Trieve retrieval infrastructure, with links to the bookmark and the text relevant to your query being displayed directly on the extension's UI.  
+The Trieve librarian is a Chrome extension that can scrape websites, subselect relevant content and text, and search and index new bookmarks regularly. It then uses the production-ready data infrastructure to store bookmark names, page content, and other relevant data. From the UI, the user can query information using the Trieve retrieval infrastructure, with links to the bookmark and the text relevant to your query being displayed directly on the extension's UI.
 
 ## Development Process
-We utilized [**oto-lab's librarian**](https://github.com/oto-labs/librarian) as a framework for this extension. We then replaced the local vector database storage and retrieval with the Trieve infrastructure. Significant improvement was made to the method through which the content was subselected by parsing out HTML. Bookmark indexing times were also improved considerably. We also updated the UI to display relevant portions of the text from the corresponding website.  
+We utilized [**oto-lab's librarian**](https://github.com/oto-labs/librarian) as a framework for the Trieve librarian. We then replaced the local vector database storage and retrieval with the Trieve infrastructure. Significant improvement was made to the method through which the content was subselected by parsing out HTML. Bookmark indexing times were also improved considerably. We also updated the UI to display relevant portions of the text from the corresponding websites.  
 
 ## Installation Instructions
 1. Clone the [Trieve librarian repository](https://github.com/vid277/trieve-librarian)
