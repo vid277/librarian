@@ -13,7 +13,6 @@ This gap in functionality was bridged by Oto labs with their development of the 
 </center>
 
 
-
 ## How does the Trieve librarian work?
 The Trieve librarian is a Chrome extension that can scrape websites, subselect relevant content and text, and search and index new bookmarks regularly. It then uses the production-ready data infrastructure to store bookmark names, page content, and other relevant data. From the UI, the user can query information using the Trieve retrieval infrastructure, with links to the bookmark and the text relevant to your query being displayed directly on the extension's UI.
 
