@@ -6,7 +6,7 @@ Companies thought of a future where these pages could be right at your fingertip
 
 All of those bookmarks can be overwhelming, however. While existing methods allow searches by a bookmark’s name, they fall short when it comes to searching for content within those bookmarks.
 
-This gap in functionality inspired the creation of the Trieve librarian.
+This gap in functionality was bridged by Oto labs with their development of the `librarian`. Despite the proficiency of their initial implementation, the storage and retrieval systems was localized, time-consuming, and complicated. Trieve alleviated the need to create our own custom embedding vectors or re-index bookmarks between browsers/systems. 
 
 <center>
     <img src="https://hackmd.io/_uploads/rk0Jip2aT.png" alt="drawing" width="400"/>
