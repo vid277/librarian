@@ -6,7 +6,7 @@ Chrome extension to search your bookmarks' content right in your browser. Privat
 
 ➤ Scrape and subselect content <br>
 ➤ Store in the Trieve database <br>
-➤ Semantic vector search through Trieve [https://trieve.ai/]
+➤ Semantic vector search through [Trieve](https://trieve.ai/)
 
 Stay tuned for enhancements and fixes:
 - [ ] Smarter salient text subselection and scraping
